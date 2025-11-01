@@ -81,6 +81,7 @@ export const createCandidate = async (req, res) => {
     const existingCandidate = await Candidate.findOne({
       name: { $regex: new RegExp(name, "i") },
       party,
+      createdBy:req.user._id,
     });
 
     if (existingCandidate) {
