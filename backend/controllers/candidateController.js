@@ -79,7 +79,7 @@ export const createCandidate = async (req, res) => {
 
     // Check if candidate already exists
     const existingCandidate = await Candidate.findOne({
-      name: { $regex: new RegExp(name, "i") },
+    
       party,
       createdBy:req.user._id,
     });
@@ -87,7 +87,7 @@ export const createCandidate = async (req, res) => {
     if (existingCandidate) {
       return res
         .status(400)
-        .json({ message: "Candidate with this name and party already exists" });
+        .json({ message: "Candidate with this  party already exists" });
     }
 
     // ✅ Handle image upload properly
@@ -149,7 +149,18 @@ export const updateCandidate = async (req, res) => {
     if (!existingCandidate) {
       return res.status(404).json({ message: 'Candidate not found' });
     }
+  // Check if candidate already exists
+    const existingCandidateParty = await Candidate.findOne({
+    
+      party,
+      createdBy:req.user._id,
+    });
 
+    if (existingCandidateParty) {
+      return res
+        .status(400)
+        .json({ message: "Candidate with this  party already exists" });
+    }
     // Check if candidate is in an election that allows updates
     const election = await Election.findById(existingCandidate.election);
     if (election && election.status !== 'upcoming') {
