@@ -69,7 +69,8 @@ export const createElection = async (req, res) => {
         {
           startDate: { $lte: new Date(endDate) },
           endDate: { $gte: new Date(startDate) },
-          status: { $in: ['active', 'upcoming'] }
+          status: { $in: ['active', 'upcoming']},
+          createdBy: req.user._id,
         }
       ]
     });
