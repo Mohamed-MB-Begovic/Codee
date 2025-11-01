@@ -179,7 +179,7 @@ export const startElection = async (req, res) => {
     }
     // check if onther election is active
     const activeElection = await Election.findOne({ 
-      status: 'active' 
+      createdBy:req.user._id,status: 'active' 
     }); 
     if (activeElection) {
       return res.status(400).json({ 
@@ -277,6 +277,7 @@ export const publishResults = async (req, res) => {
     }
     // check other election is publsihed
     const otherPublished = await Election.findOne({ 
+      createdBy:req.user._id,
       resultsPublished: true,
       _id: { $ne: election._id }  
     });
