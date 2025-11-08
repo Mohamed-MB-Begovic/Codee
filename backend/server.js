@@ -3,6 +3,9 @@ import express from 'express';
 import cors from 'cors';
 import connectDB from './config/db.js'
 import path from 'path';
+import cron from "node-cron";
+import Election from "./models/Election.js"; // adjust path as needed
+
 // Route imports
 import authRoutes from './routes/auth.js';
 import candidateRoutes from './routes/candidates.js';
@@ -47,9 +50,33 @@ const frontendPath = path.join(__dirname, 'frontend/dist');
 // Serve all static files (JS, CSS, images)
 app.use(express.static(frontendPath));
 
-// Serve index.html for all other routes (React routing support)
-// Use a named parameter instead of *
-// Replace the problematic route with:
+// 🕐 Runs every hour
+cron.schedule("0 0 * * *", async () => {
+  try {
+    console.log("🕒 Running scheduled election status updater...");
+
+    const elections = await Election.find({});
+    const now = new Date();
+
+    for (const election of elections) {
+      let newStatus;
+      if (election.startDate <= now && election.endDate >= now) newStatus = "active";
+      else if (election.startDate > now) newStatus = "upcoming";
+      else if (election.endDate < now) newStatus = "completed";
+
+      if (election.status !== newStatus) {
+        election.status = newStatus;
+        await election.save();
+        console.log(`✅ Updated election ${election.title} → ${newStatus}`);
+      }
+    }
+
+    console.log("✅ All election statuses checked and updated.");
+  } catch (error) {
+    console.error("❌ Error updating election statuses:", error);
+  }
+});
+ 
 app.get(/\/(.*)/, (req, res) => {
   res.sendFile(path.join(frontendPath, 'index.html'));
 });

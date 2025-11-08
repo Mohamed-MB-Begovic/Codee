@@ -3,7 +3,13 @@ import User from '../models/User.js';
 // Get all users
 export const getUsers = async (req, res) => {
   try {
-    const users=await User.find({createdBy:req.user._id,status:'active'});
+    const users=await User.find({
+  createdBy: req.user._id,
+  $or: [
+    { deletedAt: { $exists: false } },
+    { deletedAt: null }
+  ]
+});
     res.json(users);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -162,7 +168,7 @@ export const createAdminUsers = async (req, res) => {
 // Update user
 export const updateUser = async (req, res) => {
   try {
-    const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true }).select('-password');
+    const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!user) return res.status(404).json({ message: 'User not found' });
     res.json(user);
   } catch (err) {
@@ -177,7 +183,7 @@ export const deleteUser = async (req, res) => {
     // Find user by ID
   const user = await User.findByIdAndUpdate(
        req.params.id,
-       { status: 'inactive' ,deletedAt:new Date()},
+       {deletedAt:new Date()},
        { new: true }
      );
      

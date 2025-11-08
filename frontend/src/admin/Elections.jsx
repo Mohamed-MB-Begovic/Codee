@@ -680,7 +680,8 @@ const ElectionModal = ({ election, onClose, onSave,isSubmitting }) => {
                     name="startDate"
                     disabled={isSubmitting}
                     value={formData.startDate}
-                     min={new Date().toISOString().split('T')[0]}
+                     min={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+// min={new Date().toISOString().split('T')[0]}
                     onChange={handleInputChange}
                     className={`mt-1 block w-full rounded-md border p-2 ${
                       errors.startDate ? 'border-red-300 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'

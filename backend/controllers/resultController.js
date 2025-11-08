@@ -119,7 +119,9 @@ export const getElectionResults = async (req, res) => {
   }
 };
 export const getLatestElectionResults = async (req, res) => {
+
   try {
+ 
     // Find the most recent completed election
     const latestElection = await Election.findOne({
       createdBy:req.user,
@@ -134,6 +136,8 @@ export const getLatestElectionResults = async (req, res) => {
         message: 'No completed elections found'
       });
     }
+
+  
 
     // Get candidates and votes for this election
     const candidates = await Candidate.find({ 
@@ -162,7 +166,7 @@ export const getLatestElectionResults = async (req, res) => {
         year: candidate.year,
         thumbnail: candidate.thumbnail,
         votes: candidateVotes,
-        votePercentage: votePercentage.toFixed(2),
+        votePercentage: votePercentage.toFixed(0),
         manifesto: candidate.manifesto,
         bio: candidate.bio
       };

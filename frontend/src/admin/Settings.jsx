@@ -14,6 +14,7 @@ import {
 } from '@heroicons/react/24/outline';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { set } from 'mongoose';
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -168,7 +169,7 @@ const Settings = () => {
       if (response.data.success) {
         toast.success(response.data.message);
         loadUsers();
-        loadStatistics();
+        // loadStatistics();
       }
     } catch (error) {
       toast.error('Failed to reset voting status');
@@ -188,8 +189,9 @@ const Settings = () => {
       
       if (response.data.success) {
         toast.success(response.data.message);
+        // setUsers((prev) =>
         loadUsers();
-        loadStatistics();
+        // loadStatistics();
       }
     } catch (error) {
       toast.error('Failed to reset voting status');
@@ -221,8 +223,9 @@ const Settings = () => {
       const response = await axios.put(`/api/admin/settings/candidates/${selectedCandidate._id}/restore`);
       if (response.data.success) {
         toast.success(response.data.message);
-        loadDeletedCandidates();
-        loadStatistics();
+        // loadDeletedCandidates();
+        setDeletedCandidates((prev) => prev.filter(c => c._id !== selectedCandidate._id));
+        // loadStatistics();
       }
     } catch (error) {
       toast.error('Failed to restore candidate');
@@ -239,8 +242,9 @@ const Settings = () => {
       const response = await axios.delete(`/api/admin/settings/candidates/${selectedCandidate._id}/permanent`);
       if (response.data.success) {
         toast.success(response.data.message);
-        loadDeletedCandidates();
-        loadStatistics();
+        setDeletedCandidates((prev) => prev.filter(c => c._id !== selectedCandidate._id));
+        // loadDeletedCandidates();
+        // loadStatistics();
       }
     } catch (error) {
       toast.error('Failed to delete candidate permanently');
@@ -257,8 +261,9 @@ const Settings = () => {
       const response = await axios.put('/api/admin/settings/candidates/restore-all');
       if (response.data.success) {
         toast.success(response.data.message);
-        loadDeletedCandidates();
-        loadStatistics();
+        setDeletedCandidates([]);
+        // loadDeletedCandidates();
+        // loadStatistics();
       }
     } catch (error) {
       toast.error('Failed to restore all candidates');
@@ -290,8 +295,9 @@ const Settings = () => {
       const response = await axios.put(`/api/admin/settings/users/${selectedUser._id}/restore`);
       if (response.data.success) {
         toast.success(response.data.message);
-        loadDeletedUsers();
-        loadStatistics();
+        setDeletedUsers((prev) => prev.filter(u => u._id !== selectedUser._id));
+        // loadDeletedUsers();
+        // loadStatistics();
       }
     } catch (error) {
       toast.error('Failed to restore user');
@@ -308,8 +314,9 @@ const Settings = () => {
       const response = await axios.delete(`/api/admin/settings/users/${selectedUser._id}/permanent`);
       if (response.data.success) {
         toast.success(response.data.message);
-        loadDeletedUsers();
-        loadStatistics();
+        setDeletedUsers((prev) => prev.filter(u => u._id !== selectedUser._id));
+        // loadDeletedUsers();
+        // loadStatistics();
       }
     } catch (error) {
       toast.error('Failed to delete user permanently');
@@ -326,8 +333,9 @@ const Settings = () => {
       const response = await axios.put('/api/admin/settings/users/restore-all');
       if (response.data.success) {
         toast.success(response.data.message);
-        loadDeletedUsers();
-        loadStatistics();
+        setDeletedUsers([]);
+        // loadDeletedUsers();
+        // loadStatistics();
       }
     } catch (error) {
       toast.error('Failed to restore all users');
@@ -344,16 +352,7 @@ const Settings = () => {
     { id: 'deleted-users', name: 'Deleted Users', icon: ArchiveBoxIcon },
   ];
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="flex flex-col items-center space-y-3">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 border-solid"></div>
-          <p className="text-gray-600 font-medium">Loading settings...</p>
-        </div>
-      </div>
-    );
-  }
+
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -398,104 +397,125 @@ const Settings = () => {
           </nav>
         </div>
 
-        {/* Tab Content */}
-        <div className="bg-white rounded-lg shadow">
-          {/* Overview Tab */}
-          {activeTab === 'overview' && (
-            <div className="p-6">
-              <h2 className="text-xl font-semibold mb-6">System Overview</h2>
-              {statistics && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                  <div className="bg-blue-50 rounded-lg p-4">
-                    <h3 className="text-lg font-semibold text-blue-800">Users</h3>
-                    <p className="text-2xl font-bold text-blue-600">{statistics.users.total}</p>
-                    <p className="text-sm text-blue-700">
-                      {statistics.users.voted} voted ({statistics.users.participationRate}%)
-                    </p>
-                  </div>
-                  <div className="bg-green-50 rounded-lg p-4">
-                    <h3 className="text-lg font-semibold text-green-800">Elections</h3>
-                    <p className="text-2xl font-bold text-green-600">{statistics.elections.total}</p>
-                    <p className="text-sm text-green-700">
-                      {statistics.elections.active} active
-                    </p>
-                  </div>
-                  <div className="bg-purple-50 rounded-lg p-4">
-                    <h3 className="text-lg font-semibold text-purple-800">Votes</h3>
-                    <p className="text-2xl font-bold text-purple-600">{statistics.votes.total}</p>
-                    <p className="text-sm text-purple-700">
-                      Avg: {statistics.votes.averagePerElection} per election
-                    </p>
-                  </div>
-                  <div className="bg-orange-50 rounded-lg p-4">
-                    <h3 className="text-lg font-semibold text-orange-800">Candidates</h3>
-                    <p className="text-2xl font-bold text-orange-600">{statistics.candidates.total}</p>
-                    <p className="text-sm text-orange-700">
-                      Avg: {statistics.candidates.averagePerElection} per election
-                    </p>
-                  </div>
-                </div>
-              )}
+      {/* Tab Content */}
+<div className="bg-white rounded-lg shadow">
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="font-semibold mb-4">Quick Actions</h3>
-                  <div className="space-y-3">
-                    <button
-                      onClick={handleResetAllVotesClick}
-                      className="w-full flex items-center justify-center px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <ButtonLoadingSpinner />
-                      ) : (
-                        <ArrowPathIcon className="h-5 w-5 mr-2" />
-                      )}
-                      {isLoading ? 'Loading...' : 'Reset All User Votes'}
-                    </button>
-                    <button
-                      className="w-full flex items-center justify-center px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <ButtonLoadingSpinner />
-                      ) : (
-                        <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
-                      )}
-                      {isLoading ? 'Loading...' : 'Create Backup'}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="font-semibold mb-4">System Info</h3>
-                  {systemInfo && (
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>Node Version:</span>
-                        <span className="font-mono">{systemInfo.nodeVersion}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Platform:</span>
-                        <span className="font-mono">{systemInfo.platform}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Uptime:</span>
-                        <span className="font-mono">
-                          {Math.floor(systemInfo.uptime / 60)} minutes
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
+  {/* Overview Tab */}
+  {activeTab === 'overview' && (
+    <div className="p-6">
+      {isLoading ? (
+        <div className="flex items-center justify-center min-h-[250px]">
+          <div className="flex flex-col items-center space-y-3">
+            <div className="animate-spin rounded-full h-10 w-10 border-t-4 border-blue-600 border-solid"></div>
+            <p className="text-gray-600 font-medium">Loading overview...</p>
+          </div>
+        </div>
+      ) : (
+        <>
+          <h2 className="text-xl font-semibold mb-6">System Overview</h2>
+          {statistics && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div className="bg-blue-50 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-blue-800">Users</h3>
+                <p className="text-2xl font-bold text-blue-600">{statistics.users.total}</p>
+                <p className="text-sm text-blue-700">
+                  {statistics.users.voted} voted ({statistics.users.participationRate}%)
+                </p>
+              </div>
+              <div className="bg-green-50 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-green-800">Elections</h3>
+                <p className="text-2xl font-bold text-green-600">{statistics.elections.total}</p>
+                <p className="text-sm text-green-700">
+                  {statistics.elections.active} active
+                </p>
+              </div>
+              <div className="bg-purple-50 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-purple-800">Votes</h3>
+                <p className="text-2xl font-bold text-purple-600">{statistics.votes.total}</p>
+                <p className="text-sm text-purple-700">
+                  Avg: {statistics.votes.averagePerElection} per election
+                </p>
+              </div>
+              <div className="bg-orange-50 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-orange-800">Candidates</h3>
+                <p className="text-2xl font-bold text-orange-600">{statistics.candidates.total}</p>
+                <p className="text-sm text-orange-700">
+                  Avg: {statistics.candidates.averagePerElection} per election
+                </p>
               </div>
             </div>
           )}
 
-          {/* User Management Tab */}
-          {activeTab === 'users' && (
-            <div className="p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="font-semibold mb-4">Quick Actions</h3>
+              <div className="space-y-3">
+                <button
+                  onClick={handleResetAllVotesClick}
+                  className="w-full flex items-center justify-center px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <ButtonLoadingSpinner />
+                  ) : (
+                    <ArrowPathIcon className="h-5 w-5 mr-2" />
+                  )}
+                  {isLoading ? 'Loading...' : 'Reset All User Votes'}
+                </button>
+                <button
+                  className="w-full flex items-center justify-center px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <ButtonLoadingSpinner />
+                  ) : (
+                    <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
+                  )}
+                  {isLoading ? 'Loading...' : 'Create Backup'}
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="font-semibold mb-4">System Info</h3>
+              {systemInfo && (
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>Node Version:</span>
+                    <span className="font-mono">{systemInfo.nodeVersion}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Platform:</span>
+                    <span className="font-mono">{systemInfo.platform}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Uptime:</span>
+                    <span className="font-mono">
+                      {Math.floor(systemInfo.uptime / 60)} minutes
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  )}
+
+  {/* Users Tab */}
+  {activeTab === 'users' && (
+    <div className="p-4 sm:p-6">
+      {isLoading ? (
+        <div className="flex items-center justify-center min-h-[200px]">
+          <div className="flex flex-col items-center space-y-3">
+            <div className="animate-spin rounded-full h-10 w-10 border-t-4 border-blue-600 border-solid"></div>
+            <p className="text-gray-600 font-medium">Loading users...</p>
+          </div>
+        </div>
+      ) : (
+        <>
+   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
                 <h2 className="text-lg sm:text-xl font-semibold text-gray-800">User Management</h2>
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                   <input
@@ -519,15 +539,7 @@ const Settings = () => {
                   </button>
                 </div>
               </div>
-
-              {isLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-                  <p className="mt-2 text-gray-600">Loading users...</p>
-                </div>
-              ) : (
-                <>
-                  <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+                <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
@@ -599,15 +611,24 @@ const Settings = () => {
                   {users.length === 0 && (
                     <div className="text-center py-8 text-gray-500">No users found</div>
                   )}
-                </>
-              )}
-            </div>
-          )}
+        </>
+      )}
+    </div>
+  )}
 
-          {/* Deleted Candidates Tab */}
-          {activeTab === 'deleted-candidates' && (
-            <div className="p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+  {/* Deleted Candidates Tab */}
+  {activeTab === 'deleted-candidates' && (
+    <div className="p-4 sm:p-6">
+      {isLoading ? (
+        <div className="flex items-center justify-center min-h-[200px]">
+          <div className="flex flex-col items-center space-y-3">
+            <div className="animate-spin rounded-full h-10 w-10 border-t-4 border-blue-600 border-solid"></div>
+            <p className="text-gray-600 font-medium">Loading deleted candidates...</p>
+          </div>
+        </div>
+      ) : (
+        <>
+         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
                 <div>
                   <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
                     Deleted Candidates Management
@@ -640,15 +661,7 @@ const Settings = () => {
                   )}
                 </div>
               </div>
-
-              {isLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-                  <p className="mt-2 text-gray-600">Loading deleted candidates...</p>
-                </div>
-              ) : (
-                <>
-                  <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+                <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
@@ -738,9 +751,7 @@ const Settings = () => {
                       </p>
                     </div>
                   )}
-                </>
-              )}
-              {deletedCandidates.length > 0 && (
+                         {deletedCandidates.length > 0 && (
                 <div className="mt-6 p-4 bg-gray-50 rounded-lg">
                   <h4 className="font-semibold text-gray-900 mb-3 text-sm sm:text-base">
                     Deleted Candidates Summary
@@ -783,13 +794,24 @@ const Settings = () => {
                   </div>
                 </div>
               )}
-            </div>
-          )}
+        </>
+      )}
+    </div>
+  )}
 
-          {/* Deleted Users Tab */}
-          {activeTab === 'deleted-users' && (
-            <div className="p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+  {/* Deleted Users Tab */}
+  {activeTab === 'deleted-users' && (
+    <div className="p-4 sm:p-6">
+      {isLoading ? (
+        <div className="flex items-center justify-center min-h-[200px]">
+          <div className="flex flex-col items-center space-y-3">
+            <div className="animate-spin rounded-full h-10 w-10 border-t-4 border-blue-600 border-solid"></div>
+            <p className="text-gray-600 font-medium">Loading deleted users...</p>
+          </div>
+        </div>
+      ) : (
+        <>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
                 <div>
                   <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
                     Deleted Users Management
@@ -822,15 +844,7 @@ const Settings = () => {
                   )}
                 </div>
               </div>
-
-              {isLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-                  <p className="mt-2 text-gray-600">Loading deleted users...</p>
-                </div>
-              ) : (
-                <>
-                  <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+                    <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
@@ -925,9 +939,7 @@ const Settings = () => {
                       </p>
                     </div>
                   )}
-                </>
-              )}
-              {deletedUsers.length > 0 && (
+                       {deletedUsers.length > 0 && (
                 <div className="mt-6 p-4 bg-gray-50 rounded-lg">
                   <h4 className="font-semibold text-gray-900 mb-3 text-sm sm:text-base">
                     Deleted Users Summary
@@ -958,9 +970,12 @@ const Settings = () => {
                   </div>
                 </div>
               )}
-            </div>
-          )}
-        </div>
+        </>
+      )}
+    </div>
+  )}
+</div>
+
       </div>
 
       {/* Modals */}

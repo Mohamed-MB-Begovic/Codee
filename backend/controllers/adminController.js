@@ -175,10 +175,10 @@ export const getUsersWithVotingStatus = async (req, res) => {
 //  deleted users management
 // Get soft-deleted users
 export const getDeletedUsers = async (req, res) => {
- 
+//  console.log('get deleted user')
   try {
     const { search } = req.query;
-    const query = { status: 'inactive' };
+    const query = { status: 'inactive',deletedAt:{ $ne: null } };
     
     if (search) {
       query.$or = [
@@ -188,7 +188,10 @@ export const getDeletedUsers = async (req, res) => {
       ];
     }
 
-    const users = await User.find({createdBy:req.user._id,status:'inactive'})
+    const users = await User.find({
+  createdBy: req.user._id,
+  deletedAt: { $exists: true, $ne: null }
+})
       // .populate('election', 'title status')
       // .sort({ deletedAt: -1 });
 
@@ -277,8 +280,7 @@ export const restoreUser = async (req, res) => {
 
     const user = await User.findByIdAndUpdate(
       id,
-      { 
-        status: 'active',
+      {
         deletedAt: null
       },
       { new: true }

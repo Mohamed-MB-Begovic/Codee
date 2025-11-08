@@ -14,12 +14,13 @@ const candidateSchema = new mongoose.Schema({
   },
   course: {
     type: String,
-    required: true,
+ 
     trim: true
   },
   year: {
     type: String,
-    required: true,
+ 
+    trim: true,
     enum: ['Freshman', 'Sophomore', 'Junior', 'Senior', 'Graduate']
   },
   bio: {
@@ -48,6 +49,15 @@ const candidateSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  type:{
+    type: String,
+    enum:['school','university']
+  }, 
+  grade: {
+    type: String,
+    enum: ['9th', '10th', '11th', '12th'],
+    trim: true
   },
   deletedAt: { type: Date },
   social: {

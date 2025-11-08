@@ -89,7 +89,7 @@ export const createElection = async (req, res) => {
       createdBy: req.user._id
     });
 
-    console.log(election)
+    // console.log(election)
     await election.save();
     
     // Populate createdBy field for response
@@ -167,7 +167,7 @@ export const deleteElection = async (req, res) => {
 export const startElection = async (req, res) => {
   try {
     const election = await Election.findById(req.params.id);
-    
+    // console.log(election)
     if (!election) {
       return res.status(404).json({ message: 'Election not found' });
     }
@@ -187,6 +187,7 @@ export const startElection = async (req, res) => {
       });
     }
 
+
     // Check if there are candidates
     const candidateCount = await Candidate.countDocuments({ 
       election: election._id 
@@ -204,7 +205,15 @@ export const startElection = async (req, res) => {
         message: 'Cannot start election with lessthan 3 candidates' 
       });
     }
+const now = new Date();
+const startDate = new Date(election.startDate);
 
+// Check if the election hasn't started yet
+if (startDate > now) {
+  return res.status(400).json({ 
+    message: `Cannot start election before its scheduled start date (${startDate})` 
+  });
+}
     const updatedElection = await Election.findByIdAndUpdate(
       req.params.id,
       { 

@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps */
+ 
 /* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from 'react';
 import { useUser } from '../context/UserContext';
@@ -18,9 +18,6 @@ const Voting = () => {
   const [electionInfo, setElectionInfo] = useState(null);
   const [selectedCandidate, setSelectedCandidate] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false);  
-
-
-  // Load candidates from database
   useEffect(() => {
     const fetchCandidates = async () => {
       setIsLoading(true);
@@ -46,10 +43,9 @@ const Voting = () => {
         setIsLoading(false);
       }
     };
-
+ 
    if(user) fetchCandidates();
-  }, []);
-   // login in button display if there is no user
+  }, [user]);
   if(!user){
     return (
   <div className="flex flex-col items-center justify-center p-6 bg-white h-screen rounded-lg border border-gray-200 shadow-sm text-center">
@@ -65,6 +61,10 @@ const Voting = () => {
     </div>
     )
   }
+  // Load candidates from database
+
+   // login in button display if there is no user
+
   const handleVote = async () => {
  
     if (selectedCandidate) {

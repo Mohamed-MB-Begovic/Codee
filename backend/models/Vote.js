@@ -30,6 +30,6 @@ const voteSchema = new mongoose.Schema({
 });
 
 // Prevent duplicate votes from same student
-voteSchema.index({ studentId: 1 }, { unique: true });
+// voteSchema.index({ studentId: 1 }, { unique: true });
 
 export default mongoose.model('Vote', voteSchema);

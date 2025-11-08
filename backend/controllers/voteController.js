@@ -7,11 +7,13 @@ import Election from '../models/Election.js';
 export const submitVote = async (req, res) => {
   // console.log(req.user)
   // 
-  try {
-    const { candidateId } = req.body;
+      const { candidateId } = req.body;
     const {electionId}=req.body;
     const {user}=req.body
     const userId = req.user._id;
+
+  try {
+
 
     // // Check if user has already voted
     if (req.user.hasVoted) {
@@ -38,10 +40,15 @@ export const submitVote = async (req, res) => {
     });
 
     // check if the user has already voted in this election
-    const existingVote = await Vote.findOne({ studentId: req.user.studentId, electionId: electionId });
+    const election=await Election.findOne({_id:electionId})
+    const existingVote = await election.voters.includes(userId);
     if (existingVote) {
       return res.status(400).json({ message: 'You have already voted in this election' });
-    } 
+    }
+    // const existingVote = await Vote.findOne({ user:user, studentId: req.user.studentId, electionId: electionId });
+    // if (existingVote) {
+    //   return res.status(400).json({ message: 'You have already voted in this election' });
+    // } 
 
     // console.log(vote)
     // console.log(req.user.studentId)
@@ -52,7 +59,7 @@ export const submitVote = async (req, res) => {
     await candidate.save();
     // update election total votes
     await Election.findOneAndUpdate(
-      { candidates: candidateId, status: 'active', isActive: true },
+      { candidates: candidateId, status: 'active' },
       { $inc: { totalVotes: 1 ,totalVoters: 1}, $push:{voters:userId}} 
     );
     // Mark user as voted
@@ -74,7 +81,7 @@ export const getCandidates = async (req, res) => {
     let election = await Election.findOne({ 
       createdBy:req.user,
       status: 'active',
-      isActive: true
+      // isActive: true
     });
 
     let electionStatus = 'active';
@@ -126,7 +133,7 @@ export const getCandidates = async (req, res) => {
 
       total = await Candidate.countDocuments(filter);
     }
-console.log(election)
+// console.log(election)
     res.json({
       success: true,
       candidates,

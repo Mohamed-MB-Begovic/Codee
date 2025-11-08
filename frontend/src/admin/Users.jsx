@@ -16,6 +16,9 @@ import {
 } from '@heroicons/react/24/outline';
 import Loading from '../layout/Loading'
 import {useUser} from '../context/UserContext'
+// import { set } from 'mongoose';
+import toast from 'react-hot-toast';
+ 
 const Users = () => {
   const {user} =useUser()
   // console.log(user)
@@ -276,6 +279,8 @@ useEffect(() => {
       const response = await axios.get('/api/users'); // Adjust URL if needed
       setUsers(response.data);
       setFilteredUsers(response.data);
+      // console.log(users)
+      // console.log(response.data)
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
@@ -384,29 +389,43 @@ const handleBulkDelete = async () => {
   };
 
 const handleSaveUser = async (userData) => {
-  setModalLoading(true)
+  setModalLoading(true);
+  let response;
+// console.log(selectedUser)
   try {
     if (selectedUser) {
-      // Edit existing user
-      // console.log(userData)
-      await axios.put(`/api/users/${selectedUser._id}`, userData);
+      // Update existing user
+      response = await axios.put(`/api/users/${selectedUser._id}`, userData);
+      const updatedUser = response.data.user || response.data;
+// console.log(response.data)
+      // Update both lists in state
+      setUsers(prev =>
+        prev.map(u => (u._id === selectedUser._id ? updatedUser : u))
+      );
+      setFilteredUsers(prev =>
+        prev.map(u => (u._id === selectedUser._id ? updatedUser : u))
+      );
     } else {
-      // console.log(userData)
       // Add new user
-      await axios.post('/api/users', userData)  ;
+      response = await axios.post('/api/users', userData);
+      const newUser = response.data.user || response.data;
+
+      // Add to both lists
+      setUsers(prev => [...prev, newUser]);
+      setFilteredUsers(prev => [...prev, newUser]);
     }
-    // Refresh users from backend
-    const response = await axios.get('/api/users');
-    setUsers(response.data);
-    setFilteredUsers(response.data);
+
+    toast.success(`User ${selectedUser ? 'updated' : 'added'} successfully`);
     setShowUserModal(false);
     setSelectedUser(null);
   } catch (error) {
     console.error('Error saving user:', error);
-  }finally{
-    setModalLoading(false)
+    toast.error('Failed to save user. Please try again.');
+  } finally {
+    setModalLoading(false);
   }
 };
+
   const refreshUsers = () => {
     setIsLoading(true);
     // Simulate API call
@@ -787,6 +806,7 @@ const UserModal = ({ user, UserType, onClose, onSave, loading }) => {
     class: user?.class || "",
     semester: user?.semester || "",
     faculty: user?.faculty || "",
+    status: user?.status || "inactive",
   });
 
   // ✅ Re-sync formData when `user` or `UserType` changes
@@ -888,6 +908,7 @@ const UserModal = ({ user, UserType, onClose, onSave, loading }) => {
                       value={formData.semester}
                       onChange={handleInputChange}
                       disabled={loading}
+                      required
                       className="mt-1 block w-full p-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     >
                       <option value="">Select Semester</option>
@@ -912,6 +933,7 @@ const UserModal = ({ user, UserType, onClose, onSave, loading }) => {
                       value={formData.faculty}
                       onChange={handleInputChange}
                       disabled={loading}
+                      required
                       className="mt-1 block w-full p-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     >
                       <option value="">Select Faculty</option>
@@ -980,7 +1002,22 @@ const UserModal = ({ user, UserType, onClose, onSave, loading }) => {
                   <option value="student">Student</option>
                 </select>
               </div>
-
+                  {/* ✅ Status */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Status
+                </label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                  disabled={loading}
+                  className="mt-1 block w-full p-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
               {/* ✅ Buttons */}
               <div className="flex justify-end space-x-3 pt-4">
                 <button

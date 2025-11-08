@@ -62,43 +62,35 @@ export const getCandidate = async (req, res) => {
 export const createCandidate = async (req, res) => {
   // console.log('create candidate')
   try {
-    const { name, party, course, year, bio, manifesto } = req.body;
+    const { name, party, course, year, bio, manifesto ,grade} = req.body;
     const { id } = req.params;
-    // Check if election exists and is upcoming
+
     const election = await Election.findById(id);
-  
     if (!election) {
-      return res.status(404).json({ message: 'Election not found' });
+      return res.status(404).json({ message: "Election not found" });
     }
 
-    if (election.status !== 'upcoming') {
-      return res.status(400).json({ 
-        message: 'Cannot add candidates to active or completed elections' 
+    if (election.status !== "upcoming") {
+      return res.status(400).json({
+        message: "Cannot add candidates to active or completed elections",
       });
     }
 
-    // Check if candidate already exists
     const existingCandidate = await Candidate.findOne({
-    
       party,
-      createdBy:req.user._id,
+      createdBy: req.user._id,
     });
 
     if (existingCandidate) {
       return res
         .status(400)
-        .json({ message: "Candidate with this  party already exists" });
+        .json({ message: "Candidate with this party already exists" });
     }
 
-    // ✅ Handle image upload properly
- let thumbnail;
- 
+    let thumbnail;
     if (req.file) {
-      let encodedImage = `data:image/jpeg;base64,${req.file.buffer.toString(
-        "base64"
-      )}`;
-      // console.log(encodedImage);
-     let result = await cloudinary.uploader.upload(encodedImage, {
+      const encodedImage = `data:image/jpeg;base64,${req.file.buffer.toString("base64")}`;
+      const result = await cloudinary.uploader.upload(encodedImage, {
         resource_type: "image",
         transformation: [{ width: 500, height: 500, crop: "limit" }],
         encoding: "base64",
@@ -106,37 +98,45 @@ export const createCandidate = async (req, res) => {
       thumbnail = result.url;
     }
 
-    const candidate = new Candidate({
+    const candidateData = {
       name,
       party,
-      course,
-      year,
       bio,
       manifesto,
       thumbnail,
       election: id,
-      createdBy:req.user._id,
+      grade,
+      createdBy: req.user._id,
+      type:'school',
       social: {
         twitter: "#",
         instagram: "#",
         linkedin: "#",
       },
-    });
+    };
 
+    // Only set course/year if provided (non-school users)
+    if (course) candidateData.course = course;
+    if (year) candidateData.year = year;
+    if (year) candidateData.type = 'university';
+    
+ 
+
+    const candidate = new Candidate(candidateData);
     await candidate.save();
-    // Update candidate count in election
+
     await Election.findByIdAndUpdate(id, {
       $inc: { totalCandidates: 1 },
-      $push: { candidates: candidate._id }
+      $push: { candidates: candidate._id },
     });
+
     res.status(201).json(candidate);
   } catch (error) {
     console.error("Error creating candidate:", error);
-    res
-      .status(500)
-      .json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
  
 // Update candidate
 export const updateCandidate = async (req, res) => {

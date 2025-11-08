@@ -7,7 +7,7 @@ import { useUser } from '../context/UserContext';
 import { Link } from 'react-router-dom';
 
 const Results = () => {
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [electionData, setElectionData] = useState(null);
   const [candidates, setCandidates] = useState([]);
   const [winnerInfo, setWinnerInfo] = useState(null);
@@ -33,9 +33,9 @@ const {user}=useUser()
         setIsLoading(false);
       }
     };
-
-  if(user)  loadElectionResults();
-  }, []);
+if(user)loadElectionResults()
+  // if(user)  loadElectionResults();
+  }, [user]);
 
    if(!user){
     return (
@@ -150,23 +150,23 @@ const {user}=useUser()
     );
   }
 
-  if (!electionData) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <TrophyIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">No Election Data</h2>
-          <p className="text-gray-600 mb-4">No election results available yet.</p>
-          {/* <button
-            onClick={refreshResults}
-            className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700"
-          >
-            Check Again
-          </button> */}
-        </div>
-      </div>
-    );
-  }
+  // if (!electionData) {
+  //   return (
+  //     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+  //       <div className="text-center">
+  //         <TrophyIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+  //         <h2 className="text-2xl font-bold text-gray-900 mb-2">No Election Data</h2>
+  //         <p className="text-gray-600 mb-4">No election results available yet.</p>
+  //         {/* <button
+  //           onClick={refreshResults}
+  //           className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700"
+  //         >
+  //           Check Again
+  //         </button> */}
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
@@ -176,7 +176,7 @@ const {user}=useUser()
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-800 mb-2">Election Results</h1>
-          <p className="text-gray-600">{electionData.title}</p>
+          <p className="text-gray-600">{electionData?.title}</p>
         </div>
 
         {/* Winner Banner */}
@@ -213,18 +213,10 @@ const {user}=useUser()
 
         {/* Results Chart */}
         {!error && candidates !== null && (
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-10 md:mb-19 ">
+          <div className="bg-white rounded-2xl shadow-lg p-6 mb-20 md:mb-19 lg:mb-6">
             <div className="flex justify-between items-center mb-6  ">
               <h2 className="text-xl font-bold text-gray-800">Vote Distribution</h2>
-              {/* <button
-                onClick={refreshResults}
-                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                Refresh Results
-              </button> */}
+         
             </div>
 
             <div className="space-y-6">
@@ -252,7 +244,7 @@ const {user}=useUser()
                       </div>
                       <div className="flex justify-between text-xs text-gray-500 mt-1">
                         <span>{candidate.votes} votes</span>
-                        <span>{candidate.votePercentage}%</span>
+                        {/* <span>{candidate.votePercentage}%</span> */}
                       </div>
                     </div>
                   </div>

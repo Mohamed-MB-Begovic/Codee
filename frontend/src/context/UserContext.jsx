@@ -62,13 +62,11 @@ export const ContextProvider = ({ children }) => {
  
     try {
      const res = await axios.get('/api/users/me', { withCredentials: true });
-    //  console.log(res)
       if (res?.data?.user) {
         secureLocalStorage.setItem('user', JSON.stringify(res.data?.user));
         setUser(res.data?.user);
       }
     } catch (error) {
- 
       if(error?.response?.status===404){
       logOut()
       }

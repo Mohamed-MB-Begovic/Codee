@@ -8,7 +8,7 @@ import {
 import axios from 'axios';
 import Loading from '../../layout/Loading';
 import toast from 'react-hot-toast';
-
+import {useUser} from '../../context/UserContext';
 const AddCandidatesModal = ({ isOpen, candidates, setCandidates, onClose, editCandidate = null }) => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -16,7 +16,7 @@ const AddCandidatesModal = ({ isOpen, candidates, setCandidates, onClose, editCa
   const [isLoadingElections, setIsLoadingElections] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
-  
+  const{user}=useUser();
   const isEditMode = Boolean(editCandidate);
   
   // Reset form when modal opens/closes or when editCandidate changes
@@ -71,13 +71,17 @@ const AddCandidatesModal = ({ isOpen, candidates, setCandidates, onClose, editCa
 
     if (!formData.get("name")?.trim()) newErrors.name = 'Name is required';
     if (!formData.get("party")) newErrors.party = 'Party is required';
-    if (!formData.get("course")) newErrors.course = 'Course is required';
-    if (!formData.get("year")) newErrors.year = 'Year is required';
+ 
     if (!formData.get("bio")?.trim()) newErrors.bio = 'Bio is required';
     if (formData.get("bio")?.length > 200) newErrors.bio = 'Bio must be less than 200 characters';
     if (!formData.get("manifesto")?.trim()) newErrors.manifesto = 'Manifesto is required';
     if (formData.get("manifesto")?.length > 300) newErrors.manifesto = 'Manifesto must be less than 300 characters';
     
+
+if (user?.type === "school") {
+      if (!formData.get("grade")) newErrors.grade = 'Grade is required';
+    }
+
     // Only require image for new candidates, not for edits
     if (!isEditMode && !selectedFile) {
       newErrors.thumbnail = 'Image is required';
@@ -135,15 +139,14 @@ const AddCandidatesModal = ({ isOpen, candidates, setCandidates, onClose, editCa
 
 const handleSubmit = async (e) => {
   e.preventDefault();
-  
   // Manual FormData construction to ensure correct field names
   const formData = new FormData();
 
   // Add text fields
   formData.append('name', e.target.name.value);
   formData.append('party', e.target.party.value);
-  formData.append('course', e.target.course.value);
-  formData.append('year', e.target.year.value);
+  // formData.append('course', e.target.course.value);
+  // formData.append('year', e.target.year.value);
   formData.append('bio', e.target.bio.value);
   formData.append('manifesto', e.target.manifesto.value);
 
@@ -151,7 +154,13 @@ const handleSubmit = async (e) => {
   if (!isEditMode && e.target.election) {
     formData.append('election', e.target.election.value);
   }
-
+if (user?.type === "school") {
+  
+  formData.append("grade", e.target.grade.value);
+} else {
+  formData.append("course", e.target.course.value);
+  formData.append("year", e.target.year.value);
+}
   // CRITICAL: Only append thumbnail if a file is selected
   // Use the exact same field name as in Multer config
   if (selectedFile) {
@@ -159,12 +168,13 @@ const handleSubmit = async (e) => {
   }
 
  
-
+const newErrors = {};
   const formErrors = validateForm(formData);
   if (Object.keys(formErrors).length > 0) {
     setErrors(formErrors);
     return;
   }
+ 
 
   setIsSubmitting(true);
   try {
@@ -172,6 +182,7 @@ const handleSubmit = async (e) => {
     
     if (isEditMode) {
       // Update existing candidate
+  
       const candidateId = editCandidate._id;
       response = await axios.put(`/api/candidates/${candidateId}`, formData, {
         headers: { 
@@ -187,6 +198,7 @@ const handleSubmit = async (e) => {
       
       toast.success('Candidate updated successfully!');
     } else {
+ 
       // Add new candidate
       const electionId = formData.get("election");
       response = await axios.post(`/api/candidates/${electionId}`, formData, {
@@ -248,262 +260,279 @@ const handleSubmit = async (e) => {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4" encType="multipart/form-data">
-            <div className="space-y-6">
-              {/* Election Selection - Only show for new candidates */}
-              {!isEditMode && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Assign to Election *
-                  </label>
-                  <select
-                    name="election"
-                    className={`mt-1 block w-full rounded-md border p-2 ${
-                      errors.election ? 'border-red-300 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-                    } focus:outline-none focus:ring-1 focus:ring-blue-500`}
-                    disabled={isLoadingElections || isSubmitting}
-                    defaultValue=""
+<form onSubmit={handleSubmit} className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4" encType="multipart/form-data">
+  <div className="space-y-6">
 
-                  >
-                    <option value="">Select an election</option>
-                    {elections.map((election) => (
-                      <option key={election._id || election.id} value={election._id || election.id}>
-                        {election.title} ({election.status})
-                      </option>
-                    ))}
-                  </select>
-                  {errors.election && (
-                    <p className="mt-1 text-sm text-red-600">{errors.election}</p>
-                  )}
-                  {isLoadingElections && (
-                    <p className="mt-1 text-sm text-gray-500">Loading elections...</p>
-                  )}
-                  {!isLoadingElections && elections.length === 0 && (
-                    <p className="mt-1 text-sm text-gray-500">No upcoming elections available</p>
-                  )}
-                </div>
-              )}
+    {/* Election Selection - Only show for new candidates */}
+    {!isEditMode && (
+      <div>
+  <label className="block text-sm font-medium text-gray-700">
+    Assign to Election *
+  </label>
+  <select
+    name="election"
+    className={`mt-1 block w-full rounded-md border p-2 ${
+      errors.election
+        ? 'border-red-300 focus:border-red-500'
+        : 'border-gray-300 focus:border-blue-500'
+    } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+    disabled={isLoadingElections || isSubmitting}
+    defaultValue=""
+  >
+    <option value="">Select an election</option>
+    {elections.map((election) => (
+      <option key={election._id || election.id} value={election._id || election.id}>
+        {election.title} ({election.status})
+      </option>
+    ))}
+  </select>
 
-              {/* Image Upload with Preview */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Candidate Photo {!isEditMode && '*'}
-                </label>
-                
-                {/* Image Preview */}
-                {(imagePreview || (isEditMode && editCandidate?.thumbnail)) && (
-                  <div className="mt-2 mb-4 relative">
-                    <div className="relative inline-block">
-                      <img
-                        src={imagePreview || editCandidate.thumbnail}
-                        alt="Candidate preview"
-                        className="h-32 w-32 rounded-full object-cover border-4 border-white shadow-lg"
-                      />
-                      {imagePreview && (
-                        <button
-                          type="button"
-                          onClick={removeImagePreview}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                        >
-                          <XMarkIcon className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-500 mt-2">
-                      {imagePreview ? 'New image selected' : 'Current image'}
-                    </p>
-                  </div>
-                )}
+  {errors.election && (
+    <p className="mt-1 text-sm text-red-600">{errors.election}</p>
+  )}
 
-                {/* File Input */}
-                <div className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md ${
-                  errors.thumbnail ? 'border-red-300' : 'border-gray-300'
-                }`}>
-                  <div className="space-y-1 text-center">
-                    {!imagePreview && !editCandidate?.thumbnail ? (
-                      <>
-                        <PhotoIcon className="mx-auto h-12 w-12 text-gray-400" />
-                        <div className="flex text-sm text-gray-600">
-                          <label htmlFor="thumbnail" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none">
-                            <span>Upload a photo</span>
-                            <input
-                              id="thumbnail"
-                              name="thumbnail"
-                              type="file"
-                              accept="image/*"
-                              className="sr-only"
-                              onChange={handleImageChange}
-                            />
-                          </label>
-                          <p className="pl-1">or drag and drop</p>
-                        </div>
-                        <p className="text-xs text-gray-500">
-                          PNG, JPG, GIF up to 5MB
-                        </p>
-                      </>
-                    ) : (
-                      <div className="text-center">
-                        <label htmlFor="thumbnail" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500">
-                          <span>Change photo</span>
-                          <input
-                            id="thumbnail"
-                            disabled={isSubmitting}
-                            name="thumbnail"
-                            type="file"
-                            accept="image/*"
-                            className="sr-only"
-                            onChange={handleImageChange}
-                          />
-                        </label>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                {errors.thumbnail && (
-                  <p className="mt-1 text-sm text-red-600">{errors.thumbnail}</p>
-                )}
-                
-                {isEditMode && !imagePreview && (
-                  <p className="mt-1 text-sm text-gray-500">
-                    Leave empty to keep current photo
-                  </p>
-                )}
-              </div>
+  {isLoadingElections && (
+    <p className="mt-1 text-sm text-gray-500">Loading elections...</p>
+  )}
 
-              {/* Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Full Name *
-                </label>
-                <input
-                  type="text"
-                  disabled={isSubmitting} 
-                  name="name"
-                  defaultValue={isEditMode ? editCandidate.name : ''}
-                  className={`mt-1 block w-full rounded-md border p-2 ${
-                    errors.name ? 'border-red-300 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-                  } focus:outline-none focus:ring-1 focus:ring-blue-500`}
-                  placeholder="Enter candidate's full name"
-                />
-                {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
-              </div>
+  {!isLoadingElections && elections.length === 0 && (
+    <p className="mt-1 text-sm text-gray-500">No upcoming elections available</p>
+  )}
+</div>
 
-              {/* Party */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Political Party *
-                </label>
-                <input
-                  type="text"
-                  disabled={isSubmitting}
-                  name="party"
-                  defaultValue={isEditMode ? editCandidate.party : ''}
-                  className={`mt-1 block w-full rounded-md border p-2 ${
-                    errors.party ? 'border-red-300 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-                  } focus:outline-none focus:ring-1 focus:ring-blue-500`}
-                  placeholder="Enter candidate's party"
-                />
-                {errors.party && <p className="mt-1 text-sm text-red-600">{errors.party}</p>}
-              </div>
+    )}
 
-              {/* Course */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Course/Program *
-                </label>
-                <input
-                  type="text"
-                  disabled={isSubmitting}
-                  name="course"
-                  defaultValue={isEditMode ? editCandidate.course : ''}
-                  className={`mt-1 block w-full rounded-md border p-2 ${
-                    errors.course ? 'border-red-300 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-                  } focus:outline-none focus:ring-1 focus:ring-blue-500`}
-                  placeholder="Enter candidate's course"
-                />
-                {errors.course && <p className="mt-1 text-sm text-red-600">{errors.course}</p>}
-              </div>
+    {/* Image Upload */}
+    <div>
+      <label className="block text-sm font-medium text-gray-700">
+        Candidate Photo {!isEditMode && '*'}
+      </label>
 
-              {/* Year */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Academic Year *
-                </label>
-                <select
-                  name="year"
-                  disabled={isSubmitting}
-                  defaultValue={isEditMode ? editCandidate.year : ''}
-                  className="mt-1 block w-full rounded-md border p-2 border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value="">Select year</option>
-                  {years.map((year) => (
-                    <option key={year} value={year}>{year}</option>
-                  ))}
-                </select>
-                {errors.year && <p className="mt-1 text-sm text-red-600">{errors.year}</p>}
-              </div>
-
-              {/* Bio */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Short Bio *
-                </label>
-                <textarea
-                  name="bio"
-                  disabled={isSubmitting}
-                  rows={3}
-                  maxLength={200}
-                  defaultValue={isEditMode ? editCandidate.bio : ''}
-                  className="mt-1 block w-full rounded-md border p-2 border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  placeholder="Brief description (max 200 characters)"
-                />
-                {errors.bio && <p className="mt-1 text-sm text-red-600">{errors.bio}</p>}
-              </div>
-
-              {/* Manifesto */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Manifesto Summary *
-                </label>
-                <textarea
-                  name="manifesto"
-                  rows={3}
-                  disabled={isSubmitting}
-                  maxLength={300}
-                  defaultValue={isEditMode ? editCandidate.manifesto : ''}
-                  className="mt-1 block w-full rounded-md border p-2 border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  placeholder="Candidate's manifesto summary (max 300 characters)"
-                />
-                {errors.manifesto && <p className="mt-1 text-sm text-red-600">{errors.manifesto}</p>}
-              </div>
-
-              {errors.submit && (
-                <div className="rounded-md bg-red-50 p-4">
-                  <p className="text-sm text-red-800">{errors.submit}</p>
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 border-t border-gray-200 mt-4">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="inline-flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed sm:ml-3 sm:w-auto"
-              >
-                {isSubmitting ? <Loading/> : (isEditMode ? 'Update Candidate' : 'Add Candidate')}
-              </button>
+      {(imagePreview || (isEditMode && editCandidate?.thumbnail)) && (
+        <div className="mt-2 mb-4 relative">
+          <div className="relative inline-block">
+            <img
+              src={imagePreview || editCandidate.thumbnail}
+              alt="Candidate preview"
+              className="h-32 w-32 rounded-full object-cover border-4 border-white shadow-lg"
+            />
+            {imagePreview && (
               <button
                 type="button"
-                disabled={isSubmitting}
-                onClick={handleClose}
-                className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                onClick={removeImagePreview}
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
               >
-                Cancel
+                <XMarkIcon className="h-4 w-4" />
               </button>
+            )}
+          </div>
+          <p className="text-sm text-gray-500 mt-2">
+            {imagePreview ? 'New image selected' : 'Current image'}
+          </p>
+        </div>
+      )}
+
+      <div
+        className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md ${
+          errors.thumbnail ? 'border-red-300' : 'border-gray-300'
+        }`}
+      >
+        <div className="space-y-1 text-center">
+          {!imagePreview && !editCandidate?.thumbnail ? (
+            <>
+              <PhotoIcon className="mx-auto h-12 w-12 text-gray-400" />
+              <div className="flex text-sm text-gray-600">
+                <label
+                  htmlFor="thumbnail"
+                  className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500"
+                >
+                  <span>Upload a photo</span>
+                  <input
+                    id="thumbnail"
+                    name="thumbnail"
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    onChange={handleImageChange}
+                  />
+                </label>
+                <p className="pl-1">or drag and drop</p>
+              </div>
+              <p className="text-xs text-gray-500">PNG, JPG, GIF up to 5MB</p>
+            </>
+          ) : (
+            <div className="text-center">
+              <label
+                htmlFor="thumbnail"
+                className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500"
+              >
+                <span>Change photo</span>
+                <input
+                  id="thumbnail"
+                  name="thumbnail"
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  onChange={handleImageChange}
+                />
+              </label>
             </div>
-          </form>
+          )}
+        </div>
+      </div>
+
+      {errors.thumbnail && (
+        <p className="mt-1 text-sm text-red-600">{errors.thumbnail}</p>
+      )}
+      {isEditMode && !imagePreview && (
+        <p className="mt-1 text-sm text-gray-500">Leave empty to keep current photo</p>
+      )}
+    </div>
+
+    {/* Full Name */}
+    <div>
+      <label className="block text-sm font-medium text-gray-700">Full Name *</label>
+      <input
+        type="text"
+        name="name"
+        disabled={isSubmitting}
+        defaultValue={isEditMode ? editCandidate.name : ''}
+        className={`mt-1 block w-full rounded-md border p-2 ${
+          errors.name ? 'border-red-300 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+        } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+        placeholder="Enter candidate's full name"
+      />
+      {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
+    </div>
+
+    {/* Political Party */}
+    <div>
+      <label className="block text-sm font-medium text-gray-700">Political Party *</label>
+      <input
+        type="text"
+        name="party"
+        disabled={isSubmitting}
+        defaultValue={isEditMode ? editCandidate.party : ''}
+        className={`mt-1 block w-full rounded-md border p-2 ${
+          errors.party ? 'border-red-300 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+        } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+        placeholder="Enter candidate's party"
+      />
+      {errors.party && <p className="mt-1 text-sm text-red-600">{errors.party}</p>}
+    </div>
+
+    {/* Conditional fields based on user type */}
+    {user?.type !== 'school' ? (
+      <>
+        {/* Course */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Course/Program *</label>
+          <input
+            type="text"
+            name="course"
+            disabled={isSubmitting}
+            defaultValue={isEditMode ? editCandidate.course : ''}
+            className={`mt-1 block w-full rounded-md border p-2 ${
+              errors.course ? 'border-red-300 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+            } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+            placeholder="Enter candidate's course"
+          />
+          {errors.course && <p className="mt-1 text-sm text-red-600">{errors.course}</p>}
+        </div>
+
+        {/* Year */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Academic Year *</label>
+          <select
+            name="year"
+            disabled={isSubmitting}
+            defaultValue={isEditMode ? editCandidate.year : ''}
+            className="mt-1 block w-full rounded-md border p-2 border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          >
+            <option value="">Select year</option>
+            {years.map((year) => (
+              <option key={year} value={year}>{year}</option>
+            ))}
+          </select>
+          {errors.year && <p className="mt-1 text-sm text-red-600">{errors.year}</p>}
+        </div>
+      </>
+    ) : (
+      <>
+        {/* Grade (for school candidates) */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Grade *</label>
+          <select
+            name="grade"
+            disabled={isSubmitting}
+            defaultValue={isEditMode ? editCandidate.grade || '' : ''}
+            className={`mt-1 block w-full rounded-md border p-2 ${
+              errors.grade ? 'border-red-300 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+            } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+            // required
+          >
+            <option value="">Select Grade</option>
+            <option value="9th">9th</option>
+            <option value="10th">10th</option>
+            <option value="11th">11th</option>
+            <option value="12th">12th</option>
+          </select>
+          {errors.grade && <p className="mt-1 text-sm text-red-600">{errors.grade}</p>}
+        </div>
+      </>
+    )}
+
+    {/* Bio */}
+    <div>
+      <label className="block text-sm font-medium text-gray-700">Short Bio *</label>
+      <textarea
+        name="bio"
+        disabled={isSubmitting}
+        rows={3}
+        maxLength={200}
+        defaultValue={isEditMode ? editCandidate.bio : ''}
+        className="mt-1 block w-full rounded-md border p-2 border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+        placeholder="Brief description (max 200 characters)"
+      />
+      {errors.bio && <p className="mt-1 text-sm text-red-600">{errors.bio}</p>}
+    </div>
+
+    {/* Manifesto */}
+    <div>
+      <label className="block text-sm font-medium text-gray-700">Manifesto Summary *</label>
+      <textarea
+        name="manifesto"
+        rows={3}
+        disabled={isSubmitting}
+        maxLength={300}
+        defaultValue={isEditMode ? editCandidate.manifesto : ''}
+        className="mt-1 block w-full rounded-md border p-2 border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+        placeholder="Candidate's manifesto summary (max 300 characters)"
+      />
+      {errors.manifesto && <p className="mt-1 text-sm text-red-600">{errors.manifesto}</p>}
+    </div>
+  </div>
+
+  {/* Footer */}
+  <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 border-t border-gray-200 mt-4">
+    <button
+      type="submit"
+      disabled={isSubmitting}
+      className="inline-flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed sm:ml-3 sm:w-auto"
+    >
+      {isSubmitting ? <Loading /> : isEditMode ? 'Update Candidate' : 'Add Candidate'}
+    </button>
+    <button
+      type="button"
+      disabled={isSubmitting}
+      onClick={handleClose}
+      className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+    >
+      Cancel
+    </button>
+  </div>
+</form>
+
         </div>
       </div>
     </div>
