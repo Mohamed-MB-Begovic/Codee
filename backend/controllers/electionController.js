@@ -208,8 +208,14 @@ export const startElection = async (req, res) => {
 const now = new Date();
 const startDate = new Date(election.startDate);
 
-// Check if the election hasn't started yet
-if (startDate > now) {
+// Check if we're on the same calendar day
+const isSameDay = 
+  startDate.getFullYear() === now.getFullYear() &&
+  startDate.getMonth() === now.getMonth() &&
+  startDate.getDate() === now.getDate();
+
+// Allow same day, but block future dates
+if (startDate > now && !isSameDay) {
   return res.status(400).json({ 
     message: `Cannot start election before its scheduled start date (${startDate})` 
   });
