@@ -220,7 +220,9 @@ if (startDate > now && !isSameDay) {
     message: `Cannot start election before its scheduled start date (${startDate})` 
   });
 }
-    const updatedElection = await Election.findByIdAndUpdate(
+    console.log('is same day '+isSameDay)
+    console.log (now)
+      const updatedElection = await Election.findByIdAndUpdate(
       req.params.id,
       { 
         status: 'active',
